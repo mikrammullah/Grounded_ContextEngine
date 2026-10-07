@@ -1,0 +1,7 @@
+Enterprise Support Policy
+
+Critical incidents receive a one-hour initial response, available 24 hours a day, seven days a week for Enterprise tier accounts. The response-time target is measured from the moment a support ticket is submitted.
+
+High-priority incidents receive a four-business-hour initial response. Standard-priority incidents receive an initial response within one business day. Support does not guarantee a resolution time; the initial response target is the time to begin investigation.
+
+Customers should include the affected service, business impact, incident start time, and a technical contact in every support ticket. Do not include passwords, access tokens, or personal data in support tickets.

@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#182720">
+  <title>RAG Service | Developer Portal</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #182720;
+      --surface: #22352b;
+      --surface-raised: #2b4035;
+      --line: #40564a;
+      --text: #f1f3e9;
+      --muted: #aab9ad;
+      --lime: #d4ef72;
+      --mint: #8ed6b3;
+      --amber: #f2c26b;
+      --red: #f38b7d;
+      --sans: "Segoe UI Variable", "Aptos", "Trebuchet MS", sans-serif;
+      --mono: "Cascadia Code", Consolas, monospace;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); font: 14px/1.5 var(--sans); }
+    button { font: inherit; }
+    .shell { width: min(1120px, 100%); margin: 0 auto; padding: 30px 28px 44px; }
+    .masthead { display: flex; justify-content: space-between; align-items: center; gap: 18px; padding-bottom: 24px; border-bottom: 1px solid var(--line); }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-mark { display: grid; place-items: center; width: 42px; aspect-ratio: 1; border-radius: 11px; background: var(--lime); color: var(--bg); font: 700 19px Georgia, serif; }
+    .eyebrow { color: var(--mint); font: 10px var(--mono); text-transform: uppercase; }
+    .brand-name { margin-top: 2px; font: 20px/1.2 Georgia, "Times New Roman", serif; }
+    .connection { display: inline-flex; align-items: center; gap: 8px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 4px; color: var(--muted); font: 11px var(--mono); }
+    .led { width: 8px; height: 8px; border-radius: 50%; background: var(--amber); }
+    .led.ok { background: var(--mint); }
+    .led.bad { background: var(--red); }
+    .intro { display: flex; justify-content: space-between; align-items: end; gap: 24px; padding: 30px 0 23px; }
+    h1 { max-width: 650px; margin: 0; font: 34px/1.08 Georgia, "Times New Roman", serif; font-weight: 400; }
+    .intro p { max-width: 580px; margin: 10px 0 0; color: var(--muted); }
+    .host-tag { flex: 0 0 auto; color: var(--lime); font: 11px var(--mono); }
+    .service-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid var(--line); }
+    .service { min-height: 106px; padding: 17px 18px; background: var(--surface); }
+    .service + .service { border-left: 1px solid var(--line); }
+    .service-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .service-name { font-size: 13px; font-weight: 650; }
+    .service-state { color: var(--muted); font: 10px var(--mono); text-transform: uppercase; }
+    .service-detail { margin-top: 9px; color: var(--muted); font: 11px var(--mono); overflow-wrap: anywhere; }
+    .workspace { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(330px, .9fr); gap: 28px; margin-top: 29px; }
+    .section-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+    h2 { margin: 0; font: 20px Georgia, "Times New Roman", serif; font-weight: 400; }
+    .section-note { color: var(--muted); font: 10px var(--mono); }
+    .actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; padding-top: 14px; }
+    .action { display: flex; justify-content: space-between; align-items: center; gap: 12px; min-height: 58px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--surface); color: var(--text); text-align: left; cursor: pointer; transition: border-color .16s ease, background .16s ease, transform .16s ease; }
+    .action:hover:not(:disabled) { border-color: var(--mint); background: var(--surface-raised); transform: translateY(-1px); }
+    .action:focus-visible, .refresh:focus-visible { outline: 2px solid var(--lime); outline-offset: 2px; }
+    .action:disabled { opacity: .48; cursor: not-allowed; }
+    .action.primary { grid-column: 1 / -1; min-height: 68px; border-color: var(--lime); background: var(--lime); color: var(--bg); }
+    .action.primary:hover:not(:disabled) { background: #e1f59c; }
+    .action-copy { display: grid; gap: 2px; }
+    .action-name { font-weight: 650; font-size: 12px; }
+    .action-detail { opacity: .75; font-size: 10px; }
+    .action-glyph { flex: 0 0 auto; font: 18px var(--mono); }
+    .action.primary .action-glyph { font-size: 22px; }
+    .safety-note { margin: 12px 0 0; color: var(--muted); font-size: 11px; }
+    .safety-note strong { color: var(--mint); font-weight: 600; }
+    .run-panel { min-width: 0; }
+    .log-meta { color: var(--muted); font: 10px var(--mono); }
+    .log-box { display: flex; flex-direction: column; min-height: 315px; max-height: 470px; margin-top: 14px; border: 1px solid var(--line); border-radius: 4px; background: #101b15; overflow: hidden; }
+    .log-toolbar { display: flex; justify-content: space-between; align-items: center; padding: 9px 11px; border-bottom: 1px solid #304238; color: var(--muted); font: 10px var(--mono); }
+    .refresh { border: 0; background: transparent; color: var(--lime); cursor: pointer; font: inherit; }
+    pre { flex: 1; min-height: 0; margin: 0; padding: 13px; overflow: auto; color: #c9d8cb; font: 11px/1.65 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+    .empty { color: #809488; }
+    .footer { margin-top: 28px; padding-top: 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 10px; }
+    @media (max-width: 760px) {
+      .shell { padding: 20px 16px 32px; }
+      .intro { display: block; }
+      .host-tag { display: inline-block; margin-top: 12px; }
+      .workspace { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 560px) {
+      .masthead { align-items: flex-start; }
+      .connection { font-size: 9px; }
+      .brand-name { font-size: 17px; }
+      h1 { font-size: 29px; }
+      .service-grid { grid-template-columns: 1fr; }
+      .service + .service { border-left: 0; border-top: 1px solid var(--line); }
+      .actions { grid-template-columns: 1fr; }
+      .action.primary { grid-column: auto; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="masthead">
+      <div class="brand"><div class="brand-mark" aria-hidden="true">R</div><div><div class="eyebrow">Local tools</div><div class="brand-name">RAG Service Portal</div></div></div>
+      <div class="connection" id="portal-connection"><span class="led" id="portal-led"></span><span id="portal-label">Checking local services</span></div>
+    </header>
+
+    <section class="intro">
+      <div><h1>One place to prepare, run, and verify.</h1><p>Manage the local Python environment and Compose services, then run the suite or a live API check.</p></div>
+      <div class="host-tag">HOST: 127.0.0.1</div>
+    </section>
+
+    <section class="service-grid" aria-label="Environment status">
+      <article class="service"><div class="service-top"><span class="service-name">Docker Compose</span><span class="service-state" id="docker-state">Checking</span></div><div class="service-detail" id="docker-detail">Looking for Docker and project containers</div></article>
+      <article class="service"><div class="service-top"><span class="service-name">RAG API</span><span class="service-state" id="api-state">Checking</span></div><div class="service-detail" id="api-detail">http://127.0.0.1:8000/healthz</div></article>
+      <article class="service"><div class="service-top"><span class="service-name">Database readiness</span><span class="service-state" id="database-state">Checking</span></div><div class="service-detail" id="database-detail">http://127.0.0.1:8000/readyz</div></article>
+    </section>
+
+    <div class="workspace">
+      <section aria-labelledby="actions-title">
+        <div class="section-head"><h2 id="actions-title">Project actions</h2><span class="section-note">One task at a time</span></div>
+        <div class="actions">
+          <button class="action primary" data-action="validate"><span class="action-copy"><span class="action-name">Validate all</span><span class="action-detail">Start services, wait for ready, run pytest, then smoke test</span></span><span class="action-glyph" aria-hidden="true">▶</span></button>
+          <button class="action" data-action="prepare"><span class="action-copy"><span class="action-name">Prepare Python</span><span class="action-detail">Create .venv and install requirements</span></span><span class="action-glyph" aria-hidden="true">＋</span></button>
+          <button class="action" data-action="start"><span class="action-copy"><span class="action-name">Start services</span><span class="action-detail">Build and start API + PostgreSQL</span></span><span class="action-glyph" aria-hidden="true">↗</span></button>
+          <button class="action" data-action="test"><span class="action-copy"><span class="action-name">Run all tests</span><span class="action-detail">Execute python -m pytest -q</span></span><span class="action-glyph" aria-hidden="true">✓</span></button>
+          <button class="action" data-action="smoke"><span class="action-copy"><span class="action-name">API smoke test</span><span class="action-detail">Upload, query, verify citations, clean up</span></span><span class="action-glyph" aria-hidden="true">⌁</span></button>
+          <button class="action" data-action="stop"><span class="action-copy"><span class="action-name">Stop services</span><span class="action-detail">Stop containers; keep database volume</span></span><span class="action-glyph" aria-hidden="true">■</span></button>
+        </div>
+        <p class="safety-note"><strong>Local controller only.</strong> This portal binds to loopback and runs a fixed set of project commands. Stop it by closing its terminal or pressing Ctrl+C.</p>
+      </section>
+
+      <section class="run-panel" aria-labelledby="output-title">
+        <div class="section-head"><h2 id="output-title">Task output</h2><span class="log-meta" id="job-state">No task running</span></div>
+        <div class="log-box"><div class="log-toolbar"><span id="job-name">READY</span><button class="refresh" id="refresh-button" type="button">Refresh status</button></div><pre id="logs" aria-live="polite"><span class="empty">Choose an action to see progress and output here.</span></pre></div>
+      </section>
+    </div>
+
+    <footer class="footer">This development portal is separate from the RAG API and is not intended for production deployment.</footer>
+  </main>
+  <script>
+    const logElement = document.querySelector("#logs");
+    const actionButtons = [...document.querySelectorAll("[data-action]")];
+    let currentJobId = null;
+    let pollTimer = null;
+
+    function setService(prefix, value, detail) {
+      const state = document.querySelector(`#${prefix}-state`);
+      state.textContent = value;
+      document.querySelector(`#${prefix}-detail`).textContent = detail;
+      state.style.color = value === "Ready" || value === "Available" ? "var(--mint)" : value === "Unavailable" || value === "Stopped" ? "var(--red)" : "var(--amber)";
+    }
+
+    async function refreshStatus() {
+      try {
+        const response = await fetch("/api/status", { cache: "no-store" });
+        if (!response.ok) throw new Error(`Status request failed (${response.status})`);
+        const data = await response.json();
+        const containers = data.compose.containers.map(item => `${item.name || "container"}: ${item.state || "unknown"}${item.health ? ` (${item.health})` : ""}`);
+        setService("docker", data.compose.available ? "Available" : "Unavailable", data.compose.detail || (containers.length ? containers.join(" · ") : "No project containers are running"));
+        setService("api", data.api.available ? "Ready" : "Stopped", data.api.available ? "Health check passed" : data.api.detail || "API is not responding");
+        setService("database", data.database.available ? "Ready" : "Unavailable", data.database.available ? "Database readiness check passed" : data.database.detail || "API/database readiness is not responding");
+        const ready = data.api.available && data.database.available;
+        document.querySelector("#portal-led").className = `led ${ready ? "ok" : ""}`;
+        document.querySelector("#portal-label").textContent = ready ? "Services ready" : "Local portal connected";
+      } catch (error) {
+        document.querySelector("#portal-led").className = "led bad";
+        document.querySelector("#portal-label").textContent = error.message;
+      }
+    }
+
+    function renderJob(job) {
+      document.querySelector("#job-name").textContent = job.action.toUpperCase();
+      document.querySelector("#job-state").textContent = job.status === "running" ? "Running..." : job.status;
+      logElement.textContent = (job.logs || []).join("\n") || "Waiting for task output...";
+      logElement.scrollTop = logElement.scrollHeight;
+      const active = job.status === "queued" || job.status === "running";
+      actionButtons.forEach(button => { button.disabled = active; });
+      if (!active) {
+        currentJobId = null;
+        clearTimeout(pollTimer);
+        refreshStatus();
+      }
+      return active;
+    }
+
+    async function pollJob(jobId) {
+      try {
+        const response = await fetch(`/api/jobs/${encodeURIComponent(jobId)}`, { cache: "no-store" });
+        const job = await response.json();
+        if (!response.ok) throw new Error(job.error || "Could not read task status");
+        if (renderJob(job)) pollTimer = setTimeout(() => pollJob(jobId), 700);
+      } catch (error) {
+        document.querySelector("#job-state").textContent = error.message;
+        actionButtons.forEach(button => { button.disabled = false; });
+      }
+    }
+
+    async function startAction(action) {
+      actionButtons.forEach(button => { button.disabled = true; });
+      document.querySelector("#job-name").textContent = action.toUpperCase();
+      document.querySelector("#job-state").textContent = "Submitting...";
+      logElement.textContent = "Starting task...";
+      try {
+        const response = await fetch("/api/actions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action })
+        });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || `Action failed (${response.status})`);
+        currentJobId = result.id;
+        pollJob(currentJobId);
+      } catch (error) {
+        document.querySelector("#job-state").textContent = "Could not start";
+        logElement.textContent = error.message;
+        actionButtons.forEach(button => { button.disabled = false; });
+      }
+    }
+
+    actionButtons.forEach(button => button.addEventListener("click", () => startAction(button.dataset.action)));
+    document.querySelector("#refresh-button").addEventListener("click", refreshStatus);
+    refreshStatus();
+    setInterval(refreshStatus, 5000);
+  </script>
+</body>
+</html>

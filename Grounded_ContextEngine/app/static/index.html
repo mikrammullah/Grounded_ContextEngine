@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f3f4ef">
+  <title>RAG Control Room</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f3f4ef;
+      --white: #fff;
+      --ink: #202821;
+      --muted: #707a71;
+      --line: #dfe3dc;
+      --forest: #1c4939;
+      --green: #257252;
+      --lime: #d5f063;
+      --blue: #4366ee;
+      --blue-soft: #e9edff;
+      --amber: #bd6b19;
+      --red: #b3453d;
+      --mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+      --sans: "Segoe UI Variable", "Aptos", "Trebuchet MS", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font: 14px/1.5 var(--sans); }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .shell { min-height: 100vh; display: grid; grid-template-columns: 224px minmax(0, 1fr); }
+    .sidebar { background: var(--forest); color: #eef6ee; padding: 25px 17px; display: flex; flex-direction: column; gap: 32px; }
+    .brand { display: flex; align-items: center; gap: 11px; padding: 0 8px; }
+    .brand-mark { width: 35px; height: 35px; display: grid; place-items: center; border-radius: 11px; background: var(--lime); color: var(--forest); font-weight: 800; font-size: 17px; }
+    .brand-name { font-weight: 700; font-size: 14px; letter-spacing: .2px; }
+    .brand-sub { color: #a9c5b6; font: 10px var(--mono); margin-top: 2px; }
+    .nav-label { color: #9fb8aa; padding: 0 11px; font: 10px var(--mono); text-transform: uppercase; }
+    .nav-item { display: flex; align-items: center; gap: 11px; min-height: 40px; margin-top: 7px; padding: 0 11px; border-radius: 7px; color: #d8e7dd; text-decoration: none; }
+    .nav-item.active { color: var(--forest); background: var(--lime); font-weight: 700; }
+    .nav-icon { width: 18px; text-align: center; font-size: 15px; }
+    .side-bottom { margin-top: auto; border-top: 1px solid #ffffff24; padding: 15px 8px 0; color: #b4c8bc; font-size: 11px; }
+    .side-led { display: inline-block; width: 7px; height: 7px; margin-right: 7px; background: var(--lime); border-radius: 50%; box-shadow: 0 0 0 4px #d5f06320; }
+    main { min-width: 0; padding: 24px clamp(18px, 3vw, 42px) 40px; }
+    .topbar { display: flex; justify-content: space-between; align-items: center; gap: 18px; margin-bottom: 29px; }
+    .crumb { color: var(--muted); font-size: 12px; }
+    .top-actions { display: flex; align-items: center; gap: 9px; }
+    .live-chip { display: flex; align-items: center; gap: 7px; border: 1px solid var(--line); background: #fff; border-radius: 20px; padding: 6px 10px; color: var(--forest); font: 10px var(--mono); text-transform: uppercase; }
+    .live-chip .side-led { margin: 0; width: 6px; height: 6px; }
+    .icon-button { border: 1px solid var(--line); border-radius: 7px; background: white; color: var(--ink); min-width: 34px; height: 34px; }
+    .heading-row { display: flex; align-items: end; justify-content: space-between; gap: 22px; margin-bottom: 23px; }
+    h1 { margin: 0; font-size: 30px; line-height: 1.15; letter-spacing: 0; font-weight: 720; }
+    .heading-note { margin: 8px 0 0; color: var(--muted); font-size: 13px; }
+    .heading-actions { display: flex; gap: 8px; align-items: center; }
+    .tenant-input { width: 118px; height: 37px; padding: 0 10px; border: 1px solid var(--line); border-radius: 6px; background: white; color: var(--ink); }
+    .key-input { width: 155px; height: 37px; padding: 0 10px; border: 1px solid var(--line); border-radius: 6px; background: white; color: var(--ink); }
+    .primary { display: inline-flex; align-items: center; gap: 8px; border: 0; border-radius: 6px; min-height: 37px; padding: 0 13px; color: white; background: var(--forest); font-weight: 650; white-space: nowrap; }
+    .primary:hover { background: #28664e; }
+    .primary:disabled { opacity: .6; cursor: wait; }
+    .stat-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 22px; }
+    .stat { min-height: 100px; padding: 15px 17px; background: var(--white); border: 1px solid var(--line); border-radius: 8px; }
+    .stat-label { color: var(--muted); font-size: 11px; }
+    .stat-value { margin-top: 8px; font-size: 27px; line-height: 1; font-weight: 720; }
+    .stat-foot { margin-top: 8px; color: var(--muted); font-size: 10px; }
+    .content-grid { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(300px, .85fr); gap: 16px; align-items: start; }
+    .panel { background: var(--white); border: 1px solid var(--line); border-radius: 8px; min-width: 0; }
+    .panel-head { min-height: 59px; padding: 14px 17px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .panel-title { margin: 0; font-size: 14px; font-weight: 700; }
+    .panel-sub { color: var(--muted); font-size: 10px; margin-top: 2px; }
+    .text-link { border: 0; background: transparent; color: var(--blue); font-size: 11px; }
+    .pipeline-list { padding: 0 17px; }
+    .pipeline { padding: 15px 0 17px; border-bottom: 1px solid var(--line); }
+    .pipeline:last-child { border-bottom: 0; }
+    .pipe-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+    .pipe-name { font-weight: 680; font-size: 13px; }
+    .pipe-desc { margin-top: 3px; color: var(--muted); font-size: 11px; }
+    .status { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; border-radius: 14px; padding: 3px 8px; font: 10px var(--mono); background: #f0f2ee; color: #626d64; }
+    .status::before { content: ""; display: block; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .status.active, .status.completed { background: #e5f4eb; color: var(--green); }
+    .status.running { background: #fff2dc; color: var(--amber); }
+    .status.degraded, .status.failed { background: #fae9e7; color: var(--red); }
+    .stage-row { display: flex; align-items: stretch; margin-top: 14px; overflow-x: auto; padding-bottom: 2px; }
+    .stage { flex: 1 0 104px; position: relative; min-width: 0; padding-right: 12px; }
+    .stage:not(:last-child)::after { content: ""; position: absolute; left: 11px; right: 3px; top: 6px; height: 1px; background: var(--line); }
+    .stage-top { display: flex; align-items: center; gap: 6px; position: relative; z-index: 1; }
+    .stage-dot { flex: 0 0 13px; height: 13px; border-radius: 50%; border: 2px solid #cdd3cc; background: white; }
+    .stage.completed .stage-dot { border-color: var(--green); background: var(--green); box-shadow: inset 0 0 0 3px white; }
+    .stage.running .stage-dot { border-color: var(--amber); background: #ffe8bc; }
+    .stage.failed .stage-dot { border-color: var(--red); background: var(--red); }
+    .stage-name { padding-top: 6px; color: #3d483f; font-size: 10px; line-height: 1.3; }
+    .stage-meta { margin: 3px 0 0 19px; color: var(--muted); font: 9px var(--mono); }
+    .right-stack { display: grid; gap: 16px; }
+    .demo-body { padding: 16px; }
+    .demo-callout { padding: 12px; border-radius: 6px; border-left: 3px solid var(--blue); background: var(--blue-soft); color: #293b86; font-size: 11px; }
+    .demo-callout strong { display: block; margin-bottom: 3px; }
+    .run-state { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 13px; }
+    .run-hint { color: var(--muted); font-size: 10px; }
+    .answer-box { margin-top: 13px; border-top: 1px solid var(--line); padding-top: 12px; }
+    .answer-label { color: var(--muted); font: 9px var(--mono); text-transform: uppercase; }
+    .answer-text { margin-top: 6px; font-size: 12px; white-space: pre-wrap; }
+    .source-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+    .source-tag { background: #f0f3ec; color: var(--forest); padding: 3px 7px; border-radius: 4px; font: 9px var(--mono); }
+    .activity-list { max-height: 370px; overflow: auto; padding: 5px 15px 9px; }
+    .activity { display: grid; grid-template-columns: 11px minmax(0, 1fr) auto; gap: 9px; align-items: start; padding: 10px 0; border-bottom: 1px solid #eef0eb; }
+    .activity:last-child { border: 0; }
+    .activity-mark { width: 7px; height: 7px; margin-top: 5px; border-radius: 50%; background: #aab3a9; }
+    .activity-mark.completed { background: var(--green); }
+    .activity-mark.running { background: var(--amber); }
+    .activity-mark.failed { background: var(--red); }
+    .activity-main { min-width: 0; }
+    .activity-title { font-size: 10px; font-weight: 650; }
+    .activity-detail { color: var(--muted); font: 9px var(--mono); margin-top: 2px; overflow-wrap: anywhere; }
+    .activity-time { color: var(--muted); font: 9px var(--mono); white-space: nowrap; }
+    .empty-activity { padding: 24px 5px; text-align: center; color: var(--muted); font-size: 11px; }
+    .footnote { color: var(--muted); font-size: 10px; padding: 12px 2px; }
+    .toast { position: fixed; right: 20px; bottom: 20px; max-width: min(420px, calc(100vw - 40px)); padding: 12px 15px; color: white; background: var(--forest); border-radius: 6px; box-shadow: 0 8px 30px #17271d30; opacity: 0; transform: translateY(8px); pointer-events: none; transition: .2s ease; z-index: 5; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    @media (max-width: 1050px) { .content-grid { grid-template-columns: minmax(0, 1fr); } .right-stack { grid-template-columns: minmax(0, .9fr) minmax(0, 1fr); } }
+    @media (max-width: 780px) { .shell { grid-template-columns: 62px minmax(0, 1fr); } .sidebar { padding: 18px 9px; align-items: center; } .brand { padding: 0; } .brand-copy, .nav-label, .nav-text, .side-bottom { display: none; } .nav-item { width: 42px; justify-content: center; padding: 0; } main { padding: 18px 16px 30px; } .stat-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } .heading-row { align-items: flex-start; flex-direction: column; } }
+    @media (max-width: 560px) { .right-stack { grid-template-columns: 1fr; } .topbar { margin-bottom: 20px; } h1 { font-size: 25px; } .heading-actions { width: 100%; flex-wrap: wrap; } .key-input { flex: 1 1 130px; } .tenant-input { width: 100px; } .stat { min-height: 90px; padding: 12px; } .stat-value { font-size: 23px; } .pipe-desc { max-width: 250px; } }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar" aria-label="Main navigation">
+      <div class="brand"><div class="brand-mark">R</div><div class="brand-copy"><div class="brand-name">RAG Control Room</div><div class="brand-sub">AI OPERATIONS</div></div></div>
+      <nav>
+        <div class="nav-label">Observe</div>
+        <a class="nav-item active" href="#pipelines"><span class="nav-icon" aria-hidden="true">▦</span><span class="nav-text">Pipelines</span></a>
+        <a class="nav-item" href="#activity"><span class="nav-icon" aria-hidden="true">◷</span><span class="nav-text">Live activity</span></a>
+        <a class="nav-item" href="/docs" target="_blank" rel="noreferrer"><span class="nav-icon" aria-hidden="true">↗</span><span class="nav-text">API reference</span></a>
+      </nav>
+      <div class="side-bottom"><span class="side-led"></span>Connected to service runtime</div>
+    </aside>
+    <main>
+      <div class="topbar"><div class="crumb">Workspace&nbsp; / &nbsp;Observability&nbsp; / &nbsp;Pipelines</div><div class="top-actions"><span class="live-chip"><span class="side-led"></span><span id="connection-label">Connecting</span></span><button class="icon-button" id="refresh-button" title="Refresh pipeline status" aria-label="Refresh pipeline status">↻</button></div></div>
+      <section class="heading-row">
+        <div><h1>Pipeline observability</h1><p class="heading-note">Inspect real service executions, stage health, and retrieved evidence.</p></div>
+        <div class="heading-actions"><input class="tenant-input" id="tenant-id" value="demo" aria-label="Tenant ID" title="Tenant ID"/><input class="key-input" id="api-key" type="password" autocomplete="off" placeholder="API key (optional)" aria-label="Tenant API key"/><button class="primary" id="run-demo"><span aria-hidden="true">▶</span><span>Run sample pipeline</span></button></div>
+      </section>
+      <section class="stat-grid" aria-label="Service summary">
+        <div class="stat"><div class="stat-label">Pipelines configured</div><div class="stat-value" id="stat-pipelines">—</div><div class="stat-foot">Ingestion, retrieval, generation</div></div>
+        <div class="stat"><div class="stat-label">Stages reporting activity</div><div class="stat-value" id="stat-stages">—</div><div class="stat-foot">Observed from live requests</div></div>
+        <div class="stat"><div class="stat-label">Completed stage runs</div><div class="stat-value" id="stat-runs">—</div><div class="stat-foot">Since this service process started</div></div>
+        <div class="stat"><div class="stat-label">Recent events retained</div><div class="stat-value" id="stat-events">—</div><div class="stat-foot">Bounded in-memory event window</div></div>
+      </section>
+      <div class="content-grid">
+        <section class="panel" id="pipelines">
+          <header class="panel-head"><div><h2 class="panel-title">Execution pipelines</h2><div class="panel-sub">Stage status is updated by actual API work</div></div><button class="text-link" id="refresh-link">Refresh</button></header>
+          <div class="pipeline-list" id="pipeline-list"><div class="empty-activity">Loading pipeline state…</div></div>
+        </section>
+        <div class="right-stack">
+          <section class="panel">
+            <header class="panel-head"><div><h2 class="panel-title">Evidence run</h2><div class="panel-sub">Send the included policy through the deployed API</div></div><span class="status" id="demo-status">ready</span></header>
+            <div class="demo-body">
+              <div class="demo-callout"><strong>Live, not fixture data</strong>The sample button ingests a real file, queries the active index, and shows returned citations. Demo data is isolated to the tenant above.</div>
+              <div class="run-state"><span class="run-hint" id="run-hint">No sample run yet</span><a class="text-link" href="/demo/sample_policy.txt" target="_blank" rel="noreferrer">View source ↗</a></div>
+              <div class="answer-box" id="answer-box" hidden><div class="answer-label">Observed answer</div><div class="answer-text" id="answer-text"></div><div class="source-list" id="source-list"></div></div>
+            </div>
+          </section>
+          <section class="panel" id="activity">
+            <header class="panel-head"><div><h2 class="panel-title">Live event trail</h2><div class="panel-sub">Stage transitions from this service instance</div></div><span class="status active" id="event-count">0 events</span></header>
+            <div class="activity-list" id="activity-list"><div class="empty-activity">Waiting for service activity. Run the sample pipeline to generate verifiable events.</div></div>
+          </section>
+        </div>
+      </div>
+      <div class="footnote">Public read-only telemetry excludes document text, prompts, API keys, and tenant identifiers. Event history is process-local and resets when the service restarts.</div>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script>
+    const overviewUrl = "/api/v1/observability/overview";
+    const eventsUrl = "/api/v1/observability/events";
+    const activityList = document.querySelector("#activity-list");
+    const pipelineList = document.querySelector("#pipeline-list");
+    const eventBuffer = new Map();
+    let toastTimer;
+
+    function escapeHtml(value) {
+      return String(value).replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
+    }
+
+    function renderOverview(data) {
+      const stages = data.pipelines.flatMap(pipeline => pipeline.stages);
+      document.querySelector("#stat-pipelines").textContent = data.pipelines.length;
+      document.querySelector("#stat-stages").textContent = stages.filter(stage => stage.runs > 0 || stage.status === "running").length;
+      document.querySelector("#stat-runs").textContent = stages.reduce((sum, stage) => sum + stage.runs, 0);
+      document.querySelector("#stat-events").textContent = data.retained_events;
+      pipelineList.innerHTML = data.pipelines.map(pipeline => `
+        <article class="pipeline">
+          <div class="pipe-heading"><div><div class="pipe-name">${escapeHtml(pipeline.name)}</div><div class="pipe-desc">${escapeHtml(pipeline.description)}</div></div><span class="status ${escapeHtml(pipeline.status)}">${escapeHtml(pipeline.status)}</span></div>
+          <div class="stage-row">${pipeline.stages.map(stage => `
+            <div class="stage ${escapeHtml(stage.status)}" title="${escapeHtml(stage.name)}: ${escapeHtml(stage.status)}">
+              <div class="stage-top"><span class="stage-dot"></span></div><div class="stage-name">${escapeHtml(stage.name)}</div>
+              <div class="stage-meta">${stage.duration_ms === null ? (stage.runs ? `${stage.runs} runs` : "not run") : `${Number(stage.duration_ms).toFixed(0)} ms`}</div>
+            </div>`).join("")}</div>
+        </article>`).join("");
+      document.querySelector("#connection-label").textContent = "Runtime connected";
+    }
+
+    function renderEvents() {
+      const events = [...eventBuffer.values()].sort((a, b) => b.id - a.id).slice(0, 60);
+      document.querySelector("#event-count").textContent = `${events.length} events`;
+      if (!events.length) {
+        activityList.innerHTML = '<div class="empty-activity">Waiting for service activity. Run the sample pipeline to generate verifiable events.</div>';
+        return;
+      }
+      activityList.innerHTML = events.map(event => {
+        const time = new Date(event.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        const duration = event.duration_ms === null ? "" : ` · ${Number(event.duration_ms).toFixed(0)} ms`;
+        return `<div class="activity"><span class="activity-mark ${escapeHtml(event.status)}"></span><div class="activity-main"><div class="activity-title">${escapeHtml(event.stage_label)} <span style="font-weight:400;color:#707a71">· ${escapeHtml(event.status)}</span></div><div class="activity-detail">${escapeHtml(event.pipeline)}</div></div><time class="activity-time" datetime="${escapeHtml(event.timestamp)}">${time}${duration}</time></div>`;
+      }).join("");
+    }
+
+    async function loadInitialData() {
+      const [overviewResponse, eventsResponse] = await Promise.all([fetch(overviewUrl), fetch(eventsUrl)]);
+      if (!overviewResponse.ok || !eventsResponse.ok) throw new Error("Observability API is unavailable");
+      const overview = await overviewResponse.json();
+      const events = await eventsResponse.json();
+      renderOverview(overview);
+      eventBuffer.clear();
+      for (const event of events.events) eventBuffer.set(event.id, event);
+      renderEvents();
+    }
+
+    function notify(message) {
+      const toast = document.querySelector("#toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => toast.classList.remove("show"), 4200);
+    }
+
+    function authHeaders() {
+      const headers = { "X-Tenant-ID": document.querySelector("#tenant-id").value.trim() || "demo" };
+      const key = document.querySelector("#api-key").value;
+      if (key) headers["X-API-Key"] = key;
+      return headers;
+    }
+
+    async function runDemo() {
+      const button = document.querySelector("#run-demo");
+      const status = document.querySelector("#demo-status");
+      button.disabled = true;
+      status.className = "status running";
+      status.textContent = "running";
+      document.querySelector("#run-hint").textContent = "Uploading sample policy and asking a question…";
+      document.querySelector("#answer-box").hidden = true;
+      try {
+        const sourceResponse = await fetch("/demo/sample_policy.txt");
+        if (!sourceResponse.ok) throw new Error("Could not load the included sample policy");
+        const file = new File([await sourceResponse.blob()], "sample_policy.txt", { type: "text/plain" });
+        const form = new FormData();
+        form.append("file", file);
+        const headers = authHeaders();
+        const upload = await fetch("/api/v1/rag/documents", { method: "POST", headers, body: form });
+        const uploadData = await upload.json();
+        if (!upload.ok) throw new Error(uploadData.detail || `Document upload failed (${upload.status})`);
+        const query = await fetch("/api/v1/rag/query", {
+          method: "POST",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify({ query: "What is the critical incident initial response target?", top_k: 3 })
+        });
+        const queryData = await query.json();
+        if (!query.ok) throw new Error(queryData.detail || `Query failed (${query.status})`);
+        document.querySelector("#answer-text").textContent = queryData.answer;
+        document.querySelector("#source-list").innerHTML = queryData.sources.map(source => `<span class="source-tag">${escapeHtml(source.filename)} · ${(source.score * 100).toFixed(0)}% match</span>`).join("");
+        document.querySelector("#answer-box").hidden = false;
+        document.querySelector("#run-hint").textContent = `${uploadData.chunks_created} chunks indexed · document ${uploadData.document_id.slice(0, 8)}`;
+        status.className = "status active";
+        status.textContent = "verified";
+        notify("Sample ingestion and query completed through the live API.");
+        await loadInitialData();
+      } catch (error) {
+        status.className = "status failed";
+        status.textContent = "failed";
+        document.querySelector("#run-hint").textContent = error.message;
+        notify(error.message);
+        await loadInitialData().catch(() => {});
+      } finally {
+        button.disabled = false;
+      }
+    }
+
+    document.querySelector("#run-demo").addEventListener("click", runDemo);
+    document.querySelector("#refresh-button").addEventListener("click", () => loadInitialData().catch(error => notify(error.message)));
+    document.querySelector("#refresh-link").addEventListener("click", () => loadInitialData().catch(error => notify(error.message)));
+
+    loadInitialData().catch(() => {
+      document.querySelector("#connection-label").textContent = "API unavailable";
+      pipelineList.innerHTML = '<div class="empty-activity">Could not load pipeline state. Confirm the API and database are running, then refresh.</div>';
+    });
+    const eventSource = new EventSource("/api/v1/observability/stream");
+    eventSource.addEventListener("pipeline", event => {
+      try {
+        const data = JSON.parse(event.data);
+        eventBuffer.set(data.id, data);
+        renderEvents();
+        loadInitialData().catch(() => {});
+      } catch { /* Ignore malformed events and keep the dashboard connected. */ }
+    });
+    eventSource.onopen = () => { document.querySelector("#connection-label").textContent = "Live events"; };
+    eventSource.onerror = () => { document.querySelector("#connection-label").textContent = "Reconnecting"; };
+  </script>
+</body>
+</html>
